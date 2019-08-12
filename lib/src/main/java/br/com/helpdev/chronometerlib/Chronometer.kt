@@ -1,166 +1,107 @@
 package br.com.helpdev.chronometerlib
 
-import android.os.SystemClock
-import androidx.annotation.IntDef
-import br.com.helpdev.chronometerlib.objects.ObChronometer
 import java.io.Serializable
-import java.text.DecimalFormat
 import java.util.*
 
-class Chronometer(private var obChronometer: ObChronometer = ObChronometer()) : Serializable {
+class Chronometer : Serializable {
 
-    @ChronometerStatus
-    var status = STATUS_STOPPED
+    var dateTime: Date? = null
+        private set
+    var startTime = 0L
+        private set
+    var endTime = 0L
+        private set
+    var pausedTime = 0L
         private set
 
-    private var runningStartBaseTime = 0L
-    private var stopBaseTime = 0L
+    private val laps: MutableList<Chronometer> = mutableListOf()
 
-    private var pauseBaseTime = 0L
-    var dateStarted: Date? = null
-        private set
+    fun getLap(position: Int): Chronometer? {
+        if (laps.size == 0) throw IllegalStateException("Chronometer not started")
+        if (position <= 0 || position > laps.size) throw IllegalArgumentException("Only accepted values in 1-" + laps.size)
+        return laps[position - 1]
+    }
 
-    /**
-     * Start/Resume the chronometer
-     * Return the running time.
-     */
-    fun start(): Long {
-        if (dateStarted == null) {
-            dateStarted = Date()
+    fun getLaps() = Collections.unmodifiableList(laps)
+
+    fun startTime(startTime: Long, createLap: Boolean = true): Boolean {
+        if (this.startTime > 0) return false
+        this.startTime = startTime
+        this.dateTime = Date()
+        if (createLap) {
+            return newLap(startTime)
         }
-        if (STATUS_STARTED == status) return getRunningTime()
-        if (STATUS_STOPPED == status && stopBaseTime > 0) {
-            reset()
+        return true
+    }
+
+    fun addPausedTime(pausedTime: Long) {
+        this.pausedTime = this.pausedTime.plus(pausedTime)
+        laps.last().pausedTime = laps.last().pausedTime.plus(pausedTime)
+    }
+
+    fun setEndTime(endTime: Long) {
+        if (endTime < laps.last().getStartBase()) throw IllegalArgumentException("End time can't be lower than last lap start base")
+        this.endTime = endTime
+        laps.last().endTime = endTime
+    }
+
+    fun newLap(currentTime: Long): Boolean {
+        if (laps.size > 0) {
+            if (currentTime < laps.last().getStartBase()) throw IllegalArgumentException("Current time can't be lower than last lap start base")
+            laps.last().endTime = currentTime
         }
-        status = STATUS_STARTED
-        //--
-        if (0L == runningStartBaseTime) {
-            runningStartBaseTime = SystemClock.elapsedRealtime()
-            obChronometer.setStartTime(runningStartBaseTime)
+        return laps.add(Chronometer().apply { startTime(currentTime, false) })
+    }
+
+    fun removeLap(lapNumber: Int): Long {
+        if (!isAcceptedValueToRemove(lapNumber)) throw IllegalArgumentException("Only finished laps can be removed")
+
+        val index = lapNumber - 1
+        val lapRemoved = laps.removeAt(index)
+        val pausedTimeRemoved = lapRemoved.pausedTime
+        val runningTimeRemoved = lapRemoved.getRunTime()
+
+        this.pausedTime = this.pausedTime.minus(pausedTimeRemoved)
+        this.startTime = this.startTime.plus(runningTimeRemoved)
+        laps.forEach { lap -> lap.incrementTime(runningTimeRemoved) }
+
+        return runningTimeRemoved
+    }
+
+    fun getChronometerTime(currentTime: Long = -1) = when {
+        endTime > 0 -> getRunTime()
+        currentTime > 0 -> getRunningTime(currentTime)
+        else -> -1
+    }
+
+    fun getRunTime(): Long {
+        if (endTime <= 0) return -1
+        return endTime - getStartBase()
+    }
+
+    fun getRunningTime(currentTime: Long): Long {
+        return currentTime - getStartBase()
+    }
+
+    fun getStartBase() = startTime + pausedTime
+
+    private fun isAcceptedValueToRemove(lapNumber: Int): Boolean {
+        if (lapNumber <= 0) return false
+        return if (laps.last().endTime > 0L) {
+            lapNumber <= laps.size
         } else {
-            addAndRestorePausedTime()
+            lapNumber < laps.size
         }
-        return getRunningTime()
     }
 
-    private fun addAndRestorePausedTime() {
-        val pausedTime = SystemClock.elapsedRealtime() - pauseBaseTime
-        obChronometer.addPausedTime(pausedTime)
-        runningStartBaseTime += pausedTime
-        pauseBaseTime = 0L
+    private fun incrementTime(runningTimeRemoved: Long) {
+        startTime = startTime.plus(runningTimeRemoved)
+        if (endTime > 0L) endTime = endTime.plus(runningTimeRemoved)
     }
 
+    fun lastLap() = laps.last()
 
-    /**
-     * Pause chronometer
-     * Return the running time.
-     */
-    fun pause(): Long {
-        if (STATUS_PAUSED == status) return getRunningTime()
-        if (STATUS_STOPPED == status) throw IllegalStateException("Chronometer is stoped!")
-        status = STATUS_PAUSED
-        pauseBaseTime = SystemClock.elapsedRealtime()
-        obChronometer.setEndTime(pauseBaseTime)
-        return getRunningTime()
-    }
-
-    fun stop(): ObChronometer {
-        if (STATUS_STOPPED == status) return getObChronometer()
-        addAndRestorePausedTime()
-        status = STATUS_STOPPED
-        stopBaseTime = SystemClock.elapsedRealtime()
-        obChronometer.setEndTime(stopBaseTime)
-        return getObChronometer()
-    }
-
-    /**
-     * Reset values of chronometer
-     */
-    fun reset() {
-        obChronometer = ObChronometer()
-        runningStartBaseTime = 0L
-        pauseBaseTime = 0L
-        stopBaseTime = 0L
-        dateStarted = null
-    }
-
-    fun getObChronometer() = obChronometer
-
-    fun lap() = obChronometer.newLap(SystemClock.elapsedRealtime())
-
-    /**
-     * Return the running time.
-     */
-    fun getRunningTime() = SystemClock.elapsedRealtime() - getCurrentBase()
-
-
-    /**
-     * Return the current base of chronometer widget
-     */
-    fun getCurrentBase() = when {
-        0L == runningStartBaseTime -> SystemClock.elapsedRealtime()
-        stopBaseTime > 0 -> runningStartBaseTime + (SystemClock.elapsedRealtime() - stopBaseTime)
-        pauseBaseTime > 0 -> runningStartBaseTime + (SystemClock.elapsedRealtime() - pauseBaseTime)
-        else -> runningStartBaseTime
-    }
-
-    /**
-     * Return the base of pause in the last lap
-     */
-    fun getLastLapBasePause() = when (pauseBaseTime) {
-        0L -> SystemClock.elapsedRealtime() - getObChronometer().laps.last().pausedTime
-        else -> pauseBaseTime - getObChronometer().laps.last().pausedTime
-    }
-
-    fun getPauseBaseTime() = when (status) {
-        STATUS_STOPPED -> pauseBaseTime + (SystemClock.elapsedRealtime() - stopBaseTime)
-        else -> pauseBaseTime
-    }
-
-    /**
-     * Return the base of the last lap
-     */
-    fun getBaseLastLap() = when {
-        stopBaseTime > 0 -> getObChronometer().laps.last().getBase() + (SystemClock.elapsedRealtime() - stopBaseTime)
-        pauseBaseTime > 0L -> getObChronometer().laps.last().getBase() + (SystemClock.elapsedRealtime() - pauseBaseTime)
-        else -> getObChronometer().laps.last().getBase()
-    }
-
-    @kotlin.annotation.Retention(AnnotationRetention.SOURCE)
-    @IntDef(STATUS_STARTED, STATUS_PAUSED, STATUS_STOPPED)
-    annotation class ChronometerStatus
-
-    companion object {
-        const val STATUS_STOPPED = 2
-        const val STATUS_STARTED = 1
-        const val STATUS_PAUSED = 3
-
-        fun getFormattedTime(timeElapsed: Long): String {
-            val df = DecimalFormat("00")
-
-            val hours = (timeElapsed / (3600 * 1000)).toInt()
-            var remaining = (timeElapsed % (3600 * 1000)).toInt()
-
-            val minutes = remaining / (60 * 1000)
-            remaining %= (60 * 1000)
-
-            val seconds = remaining / 1000
-            remaining %= 1000
-
-            val milliseconds = timeElapsed.toInt() % 1000 / 100
-
-            var text = ""
-
-            if (hours > 0) {
-                text += df.format(hours.toLong()) + ":"
-            }
-
-            text += df.format(minutes.toLong()) + ":"
-            text += df.format(seconds.toLong()) + "."
-            if (hours <= 0) {
-                text += Integer.toString(milliseconds)
-            }
-            return text
-        }
+    override fun toString(): String {
+        return "Chronometer(dateTime=$dateTime, startTime=$startTime, endTime=$endTime, pausedTime=$pausedTime, laps=$laps)"
     }
 }

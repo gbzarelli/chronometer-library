@@ -21,7 +21,7 @@
 
 ```gradle
 	dependencies {
-	        implementation 'com.github.gbzarelli:chronometer-library:1.0.0'
+	        implementation 'com.github.gbzarelli:chronometer-library:2.0.0'
 	}
 ```
 
@@ -56,23 +56,27 @@
     }
 ```
 
-## How to use the Chronometer class
+## How to use the ChronometerManager class
 
-- See `Chronometer.kt` and `ObChronometer.kt`
+- See `ChronometerManager.kt` and `Chronometer.kt`
 
 ```kotlin
-    val chronometer = Chronometer()
-    chronometer.start()
-    Thread.sleep(1000)
-    chronometer.lap()
-    chronometer.pause()
-    Thread.sleep(1000)
-    chronometer.start()
-    Thread.sleep(1000)
-    chronometer.stop()
-    print( Chronometer.getFormattedTime(chronometer.getRunningTime()) )
-    val obChronometer = chronometer.obChronometer
-    chronometer.reset()
+        val manager = ChronometerManager { SystemClock.elapsedRealtime() }
+        manager.start()
+        Thread.sleep(1000) // +1s
+        manager.lap()
+        manager.pause()
+        Thread.sleep(1000) // 1s paused
+        manager.start()
+        Thread.sleep(1000) // +1s
+        manager.stop()
+
+        print(ChronometerUtils.getFormattedTime(manager.getChronometerTime()))
+
+        val obChronometer = manager.chronometer
+        println(obChronometer)
+
+        manager.reset()
 ```
 
 ## Project Sample
