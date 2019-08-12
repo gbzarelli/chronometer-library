@@ -41,11 +41,11 @@ class ChronometerManager(
         return true
     }
 
-    private fun isStarted() = chronometer.startTime > 0
+    fun isStarted() = if (isPaused() || isFinished()) false else chronometer.startTime > 0
 
-    private fun isFinished() = chronometer.endTime > 0
+    fun isFinished() = chronometer.endTime > 0
 
-    private fun isPaused() = pauseBaseTime > 0L
+    fun isPaused() = pauseBaseTime > 0L
 
     fun stop(): Chronometer {
         if (isFinished()) return chronometer

@@ -18,4 +18,29 @@ class ChronometerManagerTest {
         assertEquals(1.0, chronometerManager.getChronometerTime().toDouble(), imprecisionVisibleValue)
     }
 
+    @Test
+    fun startStatus() {
+        chronometerManager.start()
+        assertTrue(chronometerManager.isStarted())
+        assertFalse(chronometerManager.isFinished())
+        assertFalse(chronometerManager.isPaused())
+    }
+
+    @Test
+    fun pauseStatus() {
+        chronometerManager.start()
+        chronometerManager.pause()
+        assertFalse(chronometerManager.isStarted())
+        assertFalse(chronometerManager.isFinished())
+        assertTrue(chronometerManager.isPaused())
+    }
+
+    @Test
+    fun finishedStatus() {
+        chronometerManager.start()
+        chronometerManager.stop()
+        assertFalse(chronometerManager.isStarted())
+        assertTrue(chronometerManager.isFinished())
+        assertFalse(chronometerManager.isPaused())
+    }
 }
