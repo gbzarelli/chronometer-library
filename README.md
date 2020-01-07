@@ -1,4 +1,4 @@
-# Chronometer Library
+# Chronometer Library [![](https://jitpack.io/v/gbzarelli/chronometer-library.svg)](https://jitpack.io/#gbzarelli/chronometer-library)
  
  The Chronometer Library is designed to make it easy to use a stopwatch, 
  has features that help count turns, and a custom Widget to display 
