@@ -1,6 +1,10 @@
 ![Issues](https://img.shields.io/github/issues/gbzarelli/chronometer-library.svg) ![Forks](https://img.shields.io/github/forks/gbzarelli/chronometer-library.svg) ![Stars](https://img.shields.io/github/stars/gbzarelli/chronometer-library.svg) ![Release Version](https://img.shields.io/github/release/gbzarelli/chronometer-library.svg)
 
 # Chronometer Library [![CircleCI](https://circleci.com/gh/gbzarelli/chronometer-library.svg?style=svg)](https://circleci.com/gh/gbzarelli/chronometer-library) [![](https://jitpack.io/v/gbzarelli/chronometer-library.svg)](https://jitpack.io/#gbzarelli/chronometer-library)
+
+<p align="center">
+    <img src="./widget.png"/>
+</p>
  
  The Chronometer Library is designed to make it easy to use a stopwatch, 
  has features that help count turns, and a custom Widget to display 
@@ -28,9 +32,7 @@
 ```
 
 ## How to use the ChronometerWidget
- 
-#### Layout representation: 00:00.0
- 
+  
 - Put in your layout xml
 
 ```xml
