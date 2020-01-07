@@ -87,3 +87,5 @@
 - Github: [LapsCounter](https://github.com/gbzarelli/LapsCounter)
 
 # Licence
+
+[MIT](https://choosealicense.com/licenses/mit/)

@@ -5,6 +5,9 @@ import java.util.*
 
 class Chronometer : Serializable {
 
+    var accumulatedStartTime = 0L
+        private set
+
     var dateTime: Date? = null
         private set
     var startTime = 0L
@@ -50,7 +53,11 @@ class Chronometer : Serializable {
             if (currentTime < laps.last().getStartBase()) throw IllegalArgumentException("Current time can't be lower than last lap start base")
             laps.last().endTime = currentTime
         }
-        return laps.add(Chronometer().apply { startTime(currentTime, false) })
+        return laps.add(Chronometer().apply {
+            startTime(currentTime, false)
+        }.also {
+            it.accumulatedStartTime = getRunningTime(currentTime)
+        })
     }
 
     fun removeLap(lapNumber: Int): Long {
@@ -63,7 +70,12 @@ class Chronometer : Serializable {
 
         this.pausedTime = this.pausedTime.minus(pausedTimeRemoved)
         this.startTime = this.startTime.plus(runningTimeRemoved)
-        laps.forEach { lap -> lap.incrementTime(runningTimeRemoved) }
+        laps.forEachIndexed { forIndex, lap ->
+            lap.incrementTime(runningTimeRemoved)
+            if (forIndex >= index) {
+                lap.accumulatedStartTime = lap.accumulatedStartTime.minus(runningTimeRemoved)
+            }
+        }
 
         return runningTimeRemoved
     }
@@ -101,7 +113,13 @@ class Chronometer : Serializable {
 
     fun lastLap() = laps.last()
 
+    fun getAccumulatedTime(): Long {
+        return accumulatedStartTime
+    }
+
     override fun toString(): String {
         return "Chronometer(dateTime=$dateTime, startTime=$startTime, endTime=$endTime, pausedTime=$pausedTime, laps=$laps)"
     }
+
+
 }
