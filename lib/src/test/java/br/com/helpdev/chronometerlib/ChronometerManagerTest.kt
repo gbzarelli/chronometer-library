@@ -9,39 +9,49 @@ class ChronometerManagerTest {
     private val imprecisionVisibleValue = 100 * 0.5 // 50% of visible value (100 millis)
 
     @Test
-    fun shouldBeAddAndRemoveLapsWithSuccessAndCheckAllAccumulatedTimes() {
+    fun x() {
         chronometerManager.start()
-
-        repeat(3) {
-            Thread.sleep(1000)
-            chronometerManager.lap()
-        }
-
+        Thread.sleep(1000)
+        chronometerManager.lap()
+        Thread.sleep(1000)
+        chronometerManager.lap()
+        Thread.sleep(1000)
+        chronometerManager.lap()
         Thread.sleep(1000)
         chronometerManager.stop()
 
         val chronometer = chronometerManager.chronometer
-        assertEquals(4, chronometer.getLaps().size)
-
         assertEquals("00:04.0", ChronometerUtils.getFormattedTime(chronometer.getChronometerTime()))
-        val stringCheck: Array<String> = Array(4) { "00:01.0" }
-        stringCheck.forEachIndexed { index, s ->
-            assertEquals(
-                s,
-                ChronometerUtils.getFormattedTime(chronometer.getLap(index + 1)!!.getChronometerTime())
-            )
-        }
-
-        val stringCheck2: Array<String> = Array(4) { i -> "00:0$i.0" }
-        stringCheck2.forEachIndexed { index, s ->
-            assertEquals(
-                s,
-                ChronometerUtils.getFormattedTime(chronometer.getLap(index + 1)!!.getAccumulatedTime())
-            )
-        }
-
+            
+        assertEquals(
+            "00:01.0",
+            ChronometerUtils.getFormattedTime(chronometer.getLap(1)!!.getChronometerTime())
+        )
+        assertEquals(
+            "00:01.0",
+            ChronometerUtils.getFormattedTime(chronometer.getLap(2)!!.getChronometerTime())
+        )
+        assertEquals(
+            "00:01.0",
+            ChronometerUtils.getFormattedTime(chronometer.getLap(3)!!.getChronometerTime())
+        )
+        assertEquals(
+            "00:01.0",
+            ChronometerUtils.getFormattedTime(chronometer.getLap(1)!!.getAccumulatedTime())
+        )
+        assertEquals(
+            "00:02.0",
+            ChronometerUtils.getFormattedTime(chronometer.getLap(2)!!.getAccumulatedTime())
+        )
+        assertEquals(
+            "00:03.0",
+            ChronometerUtils.getFormattedTime(chronometer.getLap(3)!!.getAccumulatedTime())
+        )
+        assertEquals(
+            "00:04.0",
+            ChronometerUtils.getFormattedTime(chronometer.getLap(4)!!.getAccumulatedTime())
+        )
         chronometerManager.removeLap(2)
-        assertEquals(3, chronometer.getLaps().size)
 
         val chronometer2 = chronometerManager.chronometer
         assertEquals(
@@ -49,22 +59,30 @@ class ChronometerManagerTest {
             ChronometerUtils.getFormattedTime(chronometer2.getChronometerTime())
         )
 
-        val stringCheck3: Array<String> = Array(3) { "00:01.0" }
-        stringCheck3.forEachIndexed { index, s ->
-            assertEquals(
-                s,
-                ChronometerUtils.getFormattedTime(chronometer.getLap(index + 1)!!.getChronometerTime())
-            )
-        }
-
-        assertEquals(3, chronometer.getLaps().size)
-        val stringCheck4: Array<String> = Array(3) { i -> "00:0$i.0" }
-        stringCheck4.forEachIndexed { index, s ->
-            assertEquals(
-                s,
-                ChronometerUtils.getFormattedTime(chronometer.getLap(index + 1)!!.getAccumulatedTime())
-            )
-        }
+        assertEquals(
+            "00:01.0",
+            ChronometerUtils.getFormattedTime(chronometer2.getLap(1)!!.getChronometerTime())
+        )
+        assertEquals(
+            "00:01.0",
+            ChronometerUtils.getFormattedTime(chronometer2.getLap(2)!!.getChronometerTime())
+        )
+        assertEquals(
+            "00:01.0",
+            ChronometerUtils.getFormattedTime(chronometer2.getLap(3)!!.getChronometerTime())
+        )
+        assertEquals(
+            "00:01.0",
+            ChronometerUtils.getFormattedTime(chronometer2.getLap(1)!!.getAccumulatedTime())
+        )
+        assertEquals(
+            "00:02.0",
+            ChronometerUtils.getFormattedTime(chronometer2.getLap(2)!!.getAccumulatedTime())
+        )
+        assertEquals(
+            "00:03.0",
+            ChronometerUtils.getFormattedTime(chronometer2.getLap(3)!!.getAccumulatedTime())
+        )
     }
 
     @Test

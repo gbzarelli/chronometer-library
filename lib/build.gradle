@@ -9,7 +9,7 @@ uploadArchives {
             repository(url: mavenLocal().getUrl())
             pom.artifactId = 'chronometer-library'
             pom.groupId = 'com.github.gbzarelli'
-            pom.version = '2.0.1'
+            pom.version = '2.0.3'
         }
     }
 }
@@ -20,7 +20,7 @@ android {
         minSdkVersion 15
         targetSdkVersion 29
         versionCode 3
-        versionName "2.0.1"
+        versionName "2.0.3"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     buildTypes {

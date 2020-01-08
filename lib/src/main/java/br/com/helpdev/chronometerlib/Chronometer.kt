@@ -4,10 +4,32 @@ import java.io.Serializable
 import java.util.*
 
 class Chronometer : Serializable {
+    companion object {
+        class Builder(
+            var dateTime: Date,
+            var accumulatedStartTime: Long,
+            var startTime: Long,
+            var endTime: Long,
+            var pausedTime: Long,
+            var laps: List<Chronometer> = mutableListOf()
+        ) {
+            fun build(): Chronometer = Chronometer(this)
+        }
+    }
+
+    constructor()
+
+    private constructor(builder: Builder) {
+        this.accumulatedStartTime = builder.accumulatedStartTime
+        this.dateTime = builder.dateTime
+        this.startTime = builder.startTime
+        this.endTime = builder.endTime
+        this.pausedTime = builder.pausedTime
+        this.laps.addAll(builder.laps)
+    }
 
     var accumulatedStartTime = 0L
         private set
-
     var dateTime: Date? = null
         private set
     var startTime = 0L
@@ -114,7 +136,7 @@ class Chronometer : Serializable {
     fun lastLap() = laps.last()
 
     fun getAccumulatedTime(): Long {
-        return accumulatedStartTime
+        return accumulatedStartTime + getRunTime()
     }
 
     override fun toString(): String {
