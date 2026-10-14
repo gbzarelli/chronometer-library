@@ -1,42 +1,66 @@
-apply plugin: 'com.android.library'
-apply plugin: 'kotlin-android'
-apply plugin: 'kotlin-android-extensions'
-apply plugin: 'maven'
-
-uploadArchives {
-    repositories {
-        mavenDeployer {
-            repository(url: mavenLocal().getUrl())
-            pom.artifactId = 'chronometer-library'
-            pom.groupId = 'com.github.gbzarelli'
-            pom.version = '2.0.3'
-        }
-    }
+plugins {
+    alias(libs.plugins.android.library)
+    id 'maven-publish'
 }
 
 android {
-    compileSdkVersion 29
+    namespace = 'br.com.helpdev.chronometerlib'
+    compileSdk libs.versions.compileSdk.get().toInteger()
+
     defaultConfig {
-        minSdkVersion 15
-        targetSdkVersion 29
-        versionCode 3
-        versionName "2.0.3"
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        minSdk libs.versions.minSdk.get().toInteger()
+        targetSdk libs.versions.targetSdk.get().toInteger()
+        versionCode 4
+        versionName libs.versions.libraryVersion.get()
+        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.toVersion(libs.versions.java.get())
+        targetCompatibility JavaVersion.toVersion(libs.versions.java.get())
+    }
+
+    buildFeatures {
+        buildConfig = false
+    }
+
     buildTypes {
         release {
             minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            consumerProguardFiles 'proguard-rules.pro'
         }
+    }
+
+    publishing {
+        singleVariant('release')
     }
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
-    implementation 'androidx.appcompat:appcompat:1.1.0'
-    implementation 'androidx.core:core-ktx:1.1.0'
+    implementation libs.androidx.appcompat
+    implementation libs.androidx.core.ktx
 
-    testImplementation 'junit:junit:4.12'
-    androidTestImplementation 'androidx.test:runner:1.2.0'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
+    testImplementation libs.junit
+    androidTestImplementation libs.androidx.test.runner
+    androidTestImplementation libs.androidx.test.junit
+    androidTestImplementation libs.androidx.test.espresso.core
+}
+
+afterEvaluate {
+    publishing {
+        publications {
+            release(MavenPublication) {
+                from components.release
+                groupId = 'com.github.gbzarelli'
+                artifactId = 'chronometer-library'
+                version = libs.versions.libraryVersion.get()
+            }
+        }
+        repositories {
+            maven {
+                name = 'verification'
+                url = layout.buildDirectory.dir('verification-repository')
+            }
+        }
+    }
 }

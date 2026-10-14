@@ -10,26 +10,30 @@
  has features that help count turns, and a custom Widget to display 
  the milliseconds.
  
-## Add Chronometer Library with dependency:
+## Add the Chronometer Library
 
-- Add it in your `build.gradle` (root) at the end of repositories:
-
-```gradle
-	allprojects {
-		repositories {
-			...
-			maven { url "https://jitpack.io" }
-		}
-	}
-```
-
-- Add the dependency in your `build.gradle` project
+Add JitPack to `settings.gradle`:
 
 ```gradle
-	dependencies {
-	        implementation 'com.github.gbzarelli:chronometer-library:2.0.0'
-	}
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+        maven { url 'https://jitpack.io' }
+    }
+}
 ```
+
+Add the dependency to the app module:
+
+```gradle
+dependencies {
+    implementation 'com.github.gbzarelli:chronometer-library:2.1.0'
+}
+```
+
+The library supports Android API 24 and newer. It compiles against API 36 and targets Java 17 bytecode.
 
 ## How to use the ChronometerWidget
   
@@ -67,12 +71,10 @@
 ```kotlin
         val manager = ChronometerManager { SystemClock.elapsedRealtime() }
         manager.start()
-        Thread.sleep(1000) // +1s
+        // Let the UI or a test-controlled clock advance.
         manager.lap()
         manager.pause()
-        Thread.sleep(1000) // 1s paused
         manager.start()
-        Thread.sleep(1000) // +1s
         manager.stop()
 
         print(ChronometerUtils.getFormattedTime(manager.getChronometerTime()))

@@ -63,7 +63,9 @@ class ChronometerManager(
 
     fun removeLap(lapPosition: Int) = chronometer.removeLap(lapPosition)
 
-    fun getChronometerTime() = chronometer.getChronometerTime(currentSystemTime())
+    fun getChronometerTime() = chronometer.getChronometerTime(
+        if (isPaused()) pauseBaseTime else currentSystemTime()
+    )
 
     fun getCurrentBase(): Long {
         return getCurrentBase(chronometer)
