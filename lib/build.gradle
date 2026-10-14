@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.android.library)
+    id 'maven-publish'
 }
 
 android {
@@ -29,6 +30,10 @@ android {
             consumerProguardFiles 'proguard-rules.pro'
         }
     }
+
+    publishing {
+        singleVariant('release')
+    }
 }
 
 dependencies {
@@ -39,4 +44,23 @@ dependencies {
     androidTestImplementation libs.androidx.test.runner
     androidTestImplementation libs.androidx.test.junit
     androidTestImplementation libs.androidx.test.espresso.core
+}
+
+afterEvaluate {
+    publishing {
+        publications {
+            release(MavenPublication) {
+                from components.release
+                groupId = 'com.github.gbzarelli'
+                artifactId = 'chronometer-library'
+                version = libs.versions.libraryVersion.get()
+            }
+        }
+        repositories {
+            maven {
+                name = 'verification'
+                url = layout.buildDirectory.dir('verification-repository')
+            }
+        }
+    }
 }
