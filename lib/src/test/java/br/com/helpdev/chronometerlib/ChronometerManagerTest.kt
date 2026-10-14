@@ -1,131 +1,104 @@
 package br.com.helpdev.chronometerlib
 
-import org.junit.Assert.*
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ChronometerManagerTest {
 
-    private val chronometerManager = ChronometerManager { System.currentTimeMillis() }
-    private val imprecisionVisibleValue = 100 * 0.5 // 50% of visible value (100 millis)
+    private class MutableClock(var now: Long = 1_000L) {
+        fun currentTime() = now
+        fun advanceBy(milliseconds: Long) {
+            now += milliseconds
+        }
+    }
+
+    private fun manager(clock: MutableClock) =
+        ChronometerManager(currentSystemTime = clock::currentTime)
 
     @Test
-    fun x() {
-        chronometerManager.start()
-        Thread.sleep(1000)
-        chronometerManager.lap()
-        Thread.sleep(1000)
-        chronometerManager.lap()
-        Thread.sleep(1000)
-        chronometerManager.lap()
-        Thread.sleep(1000)
-        chronometerManager.stop()
+    fun startAndStopMeasureElapsedTimeWithoutWaiting() {
+        val clock = MutableClock()
+        val manager = manager(clock)
 
-        val chronometer = chronometerManager.chronometer
-        assertEquals("00:04.0", ChronometerUtils.getFormattedTime(chronometer.getChronometerTime()))
-            
-        assertEquals(
-            "00:01.0",
-            ChronometerUtils.getFormattedTime(chronometer.getLap(1)!!.getChronometerTime())
-        )
-        assertEquals(
-            "00:01.0",
-            ChronometerUtils.getFormattedTime(chronometer.getLap(2)!!.getChronometerTime())
-        )
-        assertEquals(
-            "00:01.0",
-            ChronometerUtils.getFormattedTime(chronometer.getLap(3)!!.getChronometerTime())
-        )
-        assertEquals(
-            "00:01.0",
-            ChronometerUtils.getFormattedTime(chronometer.getLap(1)!!.getAccumulatedTime())
-        )
-        assertEquals(
-            "00:02.0",
-            ChronometerUtils.getFormattedTime(chronometer.getLap(2)!!.getAccumulatedTime())
-        )
-        assertEquals(
-            "00:03.0",
-            ChronometerUtils.getFormattedTime(chronometer.getLap(3)!!.getAccumulatedTime())
-        )
-        assertEquals(
-            "00:04.0",
-            ChronometerUtils.getFormattedTime(chronometer.getLap(4)!!.getAccumulatedTime())
-        )
-        chronometerManager.removeLap(2)
-
-        val chronometer2 = chronometerManager.chronometer
-        assertEquals(
-            "00:03.0",
-            ChronometerUtils.getFormattedTime(chronometer2.getChronometerTime())
-        )
-
-        assertEquals(
-            "00:01.0",
-            ChronometerUtils.getFormattedTime(chronometer2.getLap(1)!!.getChronometerTime())
-        )
-        assertEquals(
-            "00:01.0",
-            ChronometerUtils.getFormattedTime(chronometer2.getLap(2)!!.getChronometerTime())
-        )
-        assertEquals(
-            "00:01.0",
-            ChronometerUtils.getFormattedTime(chronometer2.getLap(3)!!.getChronometerTime())
-        )
-        assertEquals(
-            "00:01.0",
-            ChronometerUtils.getFormattedTime(chronometer2.getLap(1)!!.getAccumulatedTime())
-        )
-        assertEquals(
-            "00:02.0",
-            ChronometerUtils.getFormattedTime(chronometer2.getLap(2)!!.getAccumulatedTime())
-        )
-        assertEquals(
-            "00:03.0",
-            ChronometerUtils.getFormattedTime(chronometer2.getLap(3)!!.getAccumulatedTime())
-        )
+        assertEquals(0L, manager.start())
+        clock.advanceBy(1_250L)
+        assertEquals(1_250L, manager.getChronometerTime())
+        assertEquals(1_250L, manager.stop().getChronometerTime())
+        assertTrue(manager.isFinished())
     }
 
     @Test
-    fun testRemoveItem() {
-        chronometerManager.start()
-        Thread.sleep(1000)
-        assertEquals(
-            1000.0,
-            chronometerManager.getChronometerTime().toDouble(),
-            imprecisionVisibleValue
-        )
-        chronometerManager.lap()
-        chronometerManager.removeLap(1)
-        assertEquals(
-            1.0,
-            chronometerManager.getChronometerTime().toDouble(),
-            imprecisionVisibleValue
-        )
+    fun pauseFreezesTimeAndResumeExcludesPausedDuration() {
+        val clock = MutableClock()
+        val manager = manager(clock)
+        manager.start()
+        clock.advanceBy(1_000L)
+
+        assertTrue(manager.pause())
+        assertEquals(1_000L, manager.getChronometerTime())
+        clock.advanceBy(10_000L)
+        assertEquals(1_000L, manager.getChronometerTime())
+
+        manager.start()
+        clock.advanceBy(500L)
+        assertEquals(1_500L, manager.stop().getChronometerTime())
     }
 
     @Test
-    fun startStatus() {
-        chronometerManager.start()
-        assertTrue(chronometerManager.isStarted())
-        assertFalse(chronometerManager.isFinished())
-        assertFalse(chronometerManager.isPaused())
+    fun stopWhilePausedDoesNotAddThePausedInterval() {
+        val clock = MutableClock()
+        val manager = manager(clock)
+        manager.start()
+        clock.advanceBy(750L)
+        manager.pause()
+        clock.advanceBy(5_000L)
+
+        assertEquals(750L, manager.stop().getChronometerTime())
     }
 
     @Test
-    fun pauseStatus() {
-        chronometerManager.start()
-        chronometerManager.pause()
-        assertFalse(chronometerManager.isStarted())
-        assertFalse(chronometerManager.isFinished())
-        assertTrue(chronometerManager.isPaused())
+    fun lapRemovalRetainsElapsedTimeAndLapBoundaries() {
+        val clock = MutableClock()
+        val manager = manager(clock)
+        manager.start()
+        clock.advanceBy(1_000L)
+        manager.lap()
+        clock.advanceBy(2_000L)
+        manager.lap()
+        clock.advanceBy(3_000L)
+        manager.stop()
+
+        assertEquals(6_000L, manager.chronometer.getChronometerTime())
+        assertEquals(1_000L, manager.chronometer.getLap(1)!!.getChronometerTime())
+        assertEquals(2_000L, manager.chronometer.getLap(2)!!.getChronometerTime())
+        assertEquals(3_000L, manager.chronometer.getLap(3)!!.getChronometerTime())
+
+        manager.removeLap(2)
+
+        assertEquals(4_000L, manager.chronometer.getChronometerTime())
+        assertEquals(1_000L, manager.chronometer.getLap(1)!!.getChronometerTime())
+        assertEquals(3_000L, manager.chronometer.getLap(2)!!.getChronometerTime())
     }
 
     @Test
-    fun finishedStatus() {
-        chronometerManager.start()
-        chronometerManager.stop()
-        assertFalse(chronometerManager.isStarted())
-        assertTrue(chronometerManager.isFinished())
-        assertFalse(chronometerManager.isPaused())
+    fun statusReflectsStartedPausedAndFinishedStates() {
+        val clock = MutableClock()
+        val manager = manager(clock)
+
+        manager.start()
+        assertTrue(manager.isStarted())
+        assertFalse(manager.isFinished())
+        assertFalse(manager.isPaused())
+
+        manager.pause()
+        assertFalse(manager.isStarted())
+        assertTrue(manager.isPaused())
+
+        manager.stop()
+        assertFalse(manager.isStarted())
+        assertTrue(manager.isFinished())
+        assertFalse(manager.isPaused())
     }
 }

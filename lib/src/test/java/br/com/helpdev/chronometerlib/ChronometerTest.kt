@@ -59,6 +59,18 @@ class ChronometerTest {
         chronometer.removeLap(1)
     }
 
+    @Test(expected = IllegalArgumentException::class)
+    fun rejectLapTimestampBeforeCurrentLapStart() {
+        startTime(100)
+        chronometer.newLap(99)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun rejectEndTimestampBeforeCurrentLapStart() {
+        startTime(100)
+        chronometer.setEndTime(99)
+    }
+
     @Test
     fun removeLapWithSuccess() {
         startTime()
